@@ -19,6 +19,8 @@ data class OAuthTokens(
     /** PostHog instance the token belongs to (US/EU routing), from `posthog_base_url`. */
     val host: String,
     val scopes: List<String>,
+    /** Projects the token is restricted to (`scoped_teams`); empty means every project the user can access. */
+    val scopedTeams: List<Long> = emptyList(),
 )
 
 interface OAuthClient {
@@ -82,7 +84,11 @@ class OAuthFlow(
             else -> throw AuthException("Token refresh failed (HTTP ${response.statusCode()})")
         }
         val fresh = parseTokens(response.body(), fallbackHost = tokens.host)
-        fresh.copy(refreshToken = fresh.refreshToken ?: refreshToken, scopes = fresh.scopes.ifEmpty { tokens.scopes })
+        fresh.copy(
+            refreshToken = fresh.refreshToken ?: refreshToken,
+            scopes = fresh.scopes.ifEmpty { tokens.scopes },
+            scopedTeams = fresh.scopedTeams.ifEmpty { tokens.scopedTeams },
+        )
     }
 
     private class ServerMetadata(val authorizationEndpoint: String, val tokenEndpoint: String)
@@ -122,6 +128,8 @@ class OAuthFlow(
             expiresAtMs = clock() + (json.get("expires_in")?.takeIf { it.isJsonPrimitive }?.asLong ?: 3600L) * 1000,
             host = host,
             scopes = json.string("scope")?.split(' ')?.filter { it.isNotEmpty() } ?: emptyList(),
+            scopedTeams = json.get("scoped_teams")?.takeIf { it.isJsonArray }?.asJsonArray
+                ?.mapNotNull { e -> e.takeIf { it.isJsonPrimitive }?.asLong } ?: emptyList(),
         )
     }
 

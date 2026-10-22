@@ -8,7 +8,13 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 /** A local stand-in for PostHog's endpoints; records every request it receives. */
 class FakeHttpServer : AutoCloseable {
-    data class Recorded(val method: String, val path: String, val body: String, val headers: Map<String, String>) {
+    data class Recorded(
+        val method: String,
+        val path: String,
+        val query: String?,
+        val body: String,
+        val headers: Map<String, String>,
+    ) {
         val form: Map<String, String> get() = parseQuery(body)
     }
 
@@ -21,7 +27,7 @@ class FakeHttpServer : AutoCloseable {
     init {
         server.createContext("/") { exchange ->
             val recorded = Recorded(
-                exchange.requestMethod, exchange.requestURI.path,
+                exchange.requestMethod, exchange.requestURI.path, exchange.requestURI.rawQuery,
                 exchange.requestBody.readBytes().toString(Charsets.UTF_8),
                 exchange.requestHeaders.entries.associate { it.key.lowercase() to it.value.first() },
             )

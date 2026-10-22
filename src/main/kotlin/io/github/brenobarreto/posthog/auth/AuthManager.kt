@@ -33,7 +33,7 @@ class AuthManager(
         update(
             AuthCredentials(
                 AuthMethod.OAUTH, tokens.host, tokens.accessToken, tokens.refreshToken,
-                tokens.expiresAtMs, tokens.scopes, label,
+                tokens.expiresAtMs, tokens.scopes, label, tokens.scopedTeams,
             ),
         )
     }
@@ -49,13 +49,18 @@ class AuthManager(
 
     suspend fun signOut() = update(null)
 
-    /** A token that is valid now, refreshing an expiring OAuth session first; null when signed out. */
-    suspend fun accessToken(): String? {
+    /**
+     * A token that is valid now, refreshing an expiring OAuth session first; null when signed out.
+     * [forceRefresh] renews an OAuth session even if it looks valid, for when the server answered 401.
+     */
+    suspend fun accessToken(forceRefresh: Boolean = false): String? {
         var changed = false
         try {
             val credentials = lock.withLock {
                 val c = loadLocked()
-                if (c == null || c.method != AuthMethod.OAUTH || c.expiresAtMs - clock() > OAuthConfig.REFRESH_BUFFER_MS) {
+                if (c == null || c.method != AuthMethod.OAUTH ||
+                    (!forceRefresh && c.expiresAtMs - clock() > OAuthConfig.REFRESH_BUFFER_MS)
+                ) {
                     return@withLock c
                 }
                 val fresh = try {
@@ -69,7 +74,7 @@ class AuthManager(
                 }
                 val refreshed = c.copy(
                     accessToken = fresh.accessToken, refreshToken = fresh.refreshToken,
-                    expiresAtMs = fresh.expiresAtMs, scopes = fresh.scopes,
+                    expiresAtMs = fresh.expiresAtMs, scopes = fresh.scopes, scopedTeams = fresh.scopedTeams,
                 )
                 persistLocked(refreshed)
                 changed = true

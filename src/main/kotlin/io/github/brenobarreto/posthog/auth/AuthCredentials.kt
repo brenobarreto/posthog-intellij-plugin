@@ -15,10 +15,11 @@ data class AuthCredentials(
     val expiresAtMs: Long = 0,
     val scopes: List<String> = emptyList(),
     val accountLabel: String? = null,
+    val scopedTeams: List<Long> = emptyList(),
 ) {
     fun toJson(): String = gson.toJson(this)
 
-    fun toTokens() = OAuthTokens(accessToken, refreshToken, expiresAtMs, host, scopes)
+    fun toTokens() = OAuthTokens(accessToken, refreshToken, expiresAtMs, host, scopes, scopedTeams)
 
     companion object {
         private val gson = Gson()
@@ -35,7 +36,12 @@ data class AuthCredentials(
             val complete = (parsed.method as AuthMethod?) != null &&
                 !(parsed.host as String?).isNullOrEmpty() &&
                 !(parsed.accessToken as String?).isNullOrEmpty()
-            return if (complete) parsed else null
+            if (!complete) return null
+            // Entries written by earlier versions lack newer list fields.
+            return parsed.copy(
+                scopes = (parsed.scopes as List<String>?).orEmpty(),
+                scopedTeams = (parsed.scopedTeams as List<Long>?).orEmpty(),
+            )
         }
     }
 }

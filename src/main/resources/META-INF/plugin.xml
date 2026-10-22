@@ -20,5 +20,17 @@
         <applicationConfigurable parentId="tools" id="io.github.brenobarreto.posthog.settings"
                                  instanceClass="io.github.brenobarreto.posthog.settings.PostHogSettingsConfigurable"
                                  bundle="messages.PostHogBundle" key="settings.displayName"/>
+        <postStartupActivity implementation="io.github.brenobarreto.posthog.cache.PostHogStartupActivity"/>
+        <notificationGroup id="PostHog Toolkit" displayType="BALLOON" bundle="messages.PostHogBundle" key="notification.group"/>
     </extensions>
+
+    <actions>
+        <group id="io.github.brenobarreto.posthog.Actions" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="io.github.brenobarreto.posthog.SelectProject"
+                    class="io.github.brenobarreto.posthog.actions.SelectProjectAction"/>
+            <action id="io.github.brenobarreto.posthog.RefreshData"
+                    class="io.github.brenobarreto.posthog.actions.RefreshDataAction"/>
+        </group>
+    </actions>
 </idea-plugin>

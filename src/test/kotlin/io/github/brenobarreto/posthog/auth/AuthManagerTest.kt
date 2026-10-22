@@ -8,29 +8,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class AuthManagerTest {
-    private class MemoryStore(var value: String? = null) : CredentialStore {
-        override fun load() = value
-        override fun save(value: String?) { this.value = value }
-    }
-
-    private class FakeOAuth(
-        var signInResult: OAuthTokens? = null,
-        var refreshResult: () -> OAuthTokens = { error("unexpected refresh") },
-    ) : OAuthClient {
-        var refreshCalls = 0
-        override suspend fun signIn(openBrowser: (String) -> Unit): OAuthTokens {
-            openBrowser("https://auth.test/authorize")
-            return signInResult!!
-        }
-        override suspend fun refresh(tokens: OAuthTokens): OAuthTokens {
-            refreshCalls++
-            return refreshResult()
-        }
-    }
-
     private var now = 10_000_000L
-    private val store = MemoryStore()
-    private val oauth = FakeOAuth()
+    private val store = MemoryCredentialStore()
+    private val oauth = StubOAuthClient()
     private val changes = mutableListOf<AuthCredentials?>()
     private var userLookup: (String, String) -> UserInfo = { _, _ -> UserInfo("dev@example.test", null) }
 
@@ -161,9 +141,9 @@ class AuthManagerTest {
 
     @Test
     fun `unreadable stored data means signed out`() = runBlocking {
-        assertNull(manager(MemoryStore("{not json")).current())
-        assertNull(manager(MemoryStore("""{"method":"API_KEY"}""")).current())
-        assertNull(manager(MemoryStore(null)).accessToken())
+        assertNull(manager(MemoryCredentialStore("{not json")).current())
+        assertNull(manager(MemoryCredentialStore("""{"method":"API_KEY"}""")).current())
+        assertNull(manager(MemoryCredentialStore(null)).accessToken())
     }
 
     @Test
