@@ -50,6 +50,7 @@ For every recognised flag call, append a hint at the end of the line:
 | Java/Kotlin client (Android) | `isFeatureEnabled`, `getFeatureFlag`, `getFeatureFlagPayload`, `getFeatureFlagResult` | 1st (`key, defaultValue`) |
 | Java/Kotlin server | same names | **2nd** (`distinctId, key, ...`) |
 | Java/Kotlin stateless | `*Stateless` variants | 2nd |
+| Java/Kotlin server, `evaluateFlags` | `isEnabled`, `getFlag`, `getFlagPayload`, `getFlagPayloadAs` on the result of `evaluateFlags(...)`, called directly (`posthog.evaluateFlags(id).isEnabled("k")`) or through a variable assigned from it (`val flags = posthog.evaluateFlags(id); flags.isEnabled("k")`) | 1st |
 
 **Java/Kotlin key ambiguity.** The Android and server SDKs use the same method names with different argument order. Resolution, in order:
 1. Kotlin named argument `key = "..."` wins.
@@ -58,6 +59,10 @@ For every recognised flag call, append a hint at the end of the line:
 4. Both are string literals (e.g. server `("user-1", "flag")` vs Android `("flag", "default")`) → prefer the one that exists in the flag cache; if neither or both exist, take the 2nd for `isFeatureEnabled` (Android's 2nd is a Boolean) and the 1st for the others.
 
 Each rule gets a test case.
+
+Extra rules found in the SDK sources (the server SDK now recommends `evaluateFlags`, which the plan didn't cover): `Companion` is skipped when finding the receiver (`PostHog.Companion.isFeatureEnabled`, as Java calls the Kotlin object); explicit type arguments are allowed (`getFlagPayloadAs<String>("k")`, `getFeatureFlag<string>('k')`); a Kotlin named argument `key = ...` settles the position even when its value isn't a literal.
+
+Known limits of the text scanner: regular expression literals and JSX text can hide the rest of their line; `evaluateFlags` results are tracked by variable name within one file, not by type; a call whose first arguments contain generic commas (`f<A, B>()`) can mis-split arguments. The PSI-based scanner (roadmap) removes these.
 
 **Scanner requirements:** skip comments; understand string literals (`'…'`, `"…"`, JS template literals without `${}`, Kotlin raw `"""…"""`); split arguments while tracking nested `()[]{}`; record the key's text range for underline and hover. Unresolved keys (variables, constants) are ignored in v0.1.
 
