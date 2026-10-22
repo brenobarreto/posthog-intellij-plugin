@@ -1,0 +1,18 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <id>io.github.brenobarreto.posthog</id>
+    <name>PostHog Toolkit (Community)</name>
+    <vendor url="https://github.com/brenobarreto/posthog-intellij-plugin">Breno Barreto</vendor>
+    <description><![CDATA[
+        <p>See your <a href="https://posthog.com">PostHog</a> feature flags right next to the code that uses them.</p>
+        <p>Shows each flag's status inline after flag checks in JavaScript, TypeScript, Java and Kotlin, and warns about
+        flag keys that don't exist in your PostHog project. Works in every JetBrains IDE, including the free editions.</p>
+        <p><i>This is a community project and is not an official PostHog product.</i> It is a port of PostHog's
+        <a href="https://github.com/PostHog/posthog-vscode">VS Code extension</a>.</p>
+    ]]></description>
+
+    <!-- Platform only: the plugin must work in every JetBrains IDE, so it can't depend on language plugins. -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <resource-bundle>messages.PostHogBundle</resource-bundle>
+</idea-plugin>
