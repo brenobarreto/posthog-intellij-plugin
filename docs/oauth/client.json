@@ -1,0 +1,18 @@
+{
+  "client_id": "https://brenobarreto.github.io/posthog-intellij-plugin/oauth/client.json",
+  "client_name": "PostHog Toolkit (Community)",
+  "client_uri": "https://github.com/brenobarreto/posthog-intellij-plugin",
+  "redirect_uris": ["http://127.0.0.1/callback"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "com.posthog": {
+    "scopes": [
+      "feature_flag:read",
+      "experiment:read",
+      "project:read",
+      "organization:read",
+      "user:read"
+    ]
+  }
+}
