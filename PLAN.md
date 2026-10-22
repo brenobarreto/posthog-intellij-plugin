@@ -82,7 +82,7 @@ src/main/kotlin/.../
 
 PostHog's OAuth server (`oauth.posthog.com`) supports PKCE, public clients, **dynamic client registration**, and **client ID metadata documents**. The VS Code client ID is tied to a `vscode://` redirect, so it can't be reused.
 
-1. **Spike:** register a client whose redirect is a loopback URL (`http://127.0.0.1:<port>/callback`, served by a temporary local server). Preferred option: a client ID metadata document hosted on the project's GitHub Pages. Check whether any port is accepted and which scopes are granted (`feature_flag:read`, `experiment:read`, `project:read`, `user:read`, …). Note that the token response includes `posthog_base_url`, which handles US/EU routing.
+1. **Spike result:** a client ID metadata document (CIMD) works with a loopback redirect. The document is `docs/oauth/client.json`, served by GitHub Pages at `https://brenobarreto.github.io/posthog-intellij-plugin/oauth/client.json`, which is also the `client_id`. It lists `http://127.0.0.1/callback` without a port, so any port matches, per [PostHog's OAuth docs](https://posthog.com/docs/api/oauth.md). The token response includes `posthog_base_url`, which handles US/EU routing. Consequences: users see an "unverified application" notice, because verification requires HTTPS redirect URIs; the scopes in `OAuthConfig.SCOPES` must stay within those declared in the document. Still to confirm with a real sign-in: which scopes the token actually carries.
 2. **Fallback, which also stays as an option:** a personal API key (`phx_…`) plus host (US / EU / custom), stored in `PasswordSafe`.
 
 ## Platform targets

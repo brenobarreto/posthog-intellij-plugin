@@ -15,4 +15,10 @@
     <depends>com.intellij.modules.platform</depends>
 
     <resource-bundle>messages.PostHogBundle</resource-bundle>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationConfigurable parentId="tools" id="io.github.brenobarreto.posthog.settings"
+                                 instanceClass="io.github.brenobarreto.posthog.settings.PostHogSettingsConfigurable"
+                                 bundle="messages.PostHogBundle" key="settings.displayName"/>
+    </extensions>
 </idea-plugin>
