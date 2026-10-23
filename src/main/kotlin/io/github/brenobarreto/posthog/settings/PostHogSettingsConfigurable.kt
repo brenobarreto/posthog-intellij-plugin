@@ -3,9 +3,15 @@ package io.github.brenobarreto.posthog.settings
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.EDT
 import com.intellij.openapi.options.SearchableConfigurable
+import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPasswordField
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.dsl.builder.COLUMNS_MEDIUM
+import com.intellij.ui.dsl.builder.bindItem
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.bindText
+import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.NamedColorUtil
 import io.github.brenobarreto.posthog.PostHogBundle
@@ -23,7 +29,10 @@ import kotlinx.coroutines.withContext
 import javax.swing.JButton
 import javax.swing.JComponent
 
-/** Sign-in controls. Actions take effect immediately, so there is nothing to apply or reset. */
+/**
+ * Sign-in controls, which take effect immediately, and the inline hint preferences, which are applied
+ * with the dialog's Apply button.
+ */
 class PostHogSettingsConfigurable : SearchableConfigurable {
     private enum class Region(val bundleKey: String) {
         US("settings.region.us"), EU("settings.region.eu"), CUSTOM("settings.region.custom");
@@ -42,6 +51,8 @@ class PostHogSettingsConfigurable : SearchableConfigurable {
     private val regionBox = com.intellij.openapi.ui.ComboBox(Region.entries.toTypedArray())
     private val customHostField = JBTextField(30)
     private val apiKeyField = JBPasswordField()
+    private val settings get() = PostHogSettings.getInstance()
+    private var dialogPanel: DialogPanel? = null
 
     override fun getId() = "io.github.brenobarreto.posthog.settings"
 
@@ -63,6 +74,32 @@ class PostHogSettingsConfigurable : SearchableConfigurable {
                     cell(signOutButton)
                 }
             }
+            group(PostHogBundle.message("settings.hints.title")) {
+                row {
+                    checkBox(PostHogBundle.message("settings.hints.show"))
+                        .bindSelected({ settings.state.showHints }, { settings.state.showHints = it })
+                }
+                row(PostHogBundle.message("settings.hints.mode")) {
+                    comboBox(DisplayMode.entries)
+                        .bindItem({ settings.state.mode }, { settings.state.mode = it ?: DisplayMode.ALWAYS })
+                }
+                row(PostHogBundle.message("settings.hints.clientNames")) {
+                    textField().columns(COLUMNS_MEDIUM)
+                        .bindText(
+                            { settings.state.extraClientNames.joinToString(", ") },
+                            { settings.state.extraClientNames = PostHogSettings.parseNames(it) },
+                        )
+                        .comment(PostHogBundle.message("settings.hints.clientNames.comment"))
+                }
+                row(PostHogBundle.message("settings.hints.flagFunctions")) {
+                    textField().columns(COLUMNS_MEDIUM)
+                        .bindText(
+                            { settings.state.extraFlagFunctions.joinToString(", ") },
+                            { settings.state.extraFlagFunctions = PostHogSettings.parseNames(it) },
+                        )
+                        .comment(PostHogBundle.message("settings.hints.flagFunctions.comment"))
+                }
+            }
             group(PostHogBundle.message("settings.apiKey.title")) {
                 row { comment(PostHogBundle.message("settings.apiKey.comment")) }
                 row(PostHogBundle.message("settings.apiKey.region")) { cell(regionBox) }
@@ -71,16 +108,25 @@ class PostHogSettingsConfigurable : SearchableConfigurable {
                 row { cell(connectButton) }
             }
         }
+        dialogPanel = component
         auth.scope.launch { refreshStatus() }
         return component
     }
 
-    override fun isModified() = false
+    override fun isModified() = dialogPanel?.isModified() == true
 
-    override fun apply() {}
+    override fun apply() {
+        dialogPanel?.apply()
+        settings.notifyChanged()
+    }
+
+    override fun reset() {
+        dialogPanel?.reset()
+    }
 
     override fun disposeUIResources() {
         signInJob?.cancel()
+        dialogPanel = null
     }
 
     private fun onSignInClicked() {

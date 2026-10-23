@@ -21,6 +21,10 @@ data class FeatureFlag(
     /** Top-level `rollout_percentage`, set on simple flags. */
     val rolloutPercentage: Double?,
     val filters: JsonObject?,
+    /** First name, else email, of whoever created the flag. */
+    val createdBy: String? = null,
+    /** ISO timestamp from the API. */
+    val createdAt: String? = null,
 ) {
     private val groups: List<JsonObject> by lazy {
         filters?.get("groups")?.takeIf { it.isJsonArray }?.asJsonArray?.mapNotNull { it.asObjectOrNull() } ?: emptyList()
@@ -46,6 +50,8 @@ data class FeatureFlag(
 
 enum class ExperimentStatus { DRAFT, RUNNING, COMPLETE }
 
+data class ExperimentMetric(val name: String, val type: String?, val goal: String?)
+
 data class Experiment(
     val id: Long,
     val name: String,
@@ -54,6 +60,10 @@ data class Experiment(
     val featureFlagKey: String,
     /** `won` or `lost` once concluded. */
     val conclusion: String?,
+    val conclusionComment: String? = null,
+    /** How traffic is split between variants (`parameters.feature_flag_variants`). */
+    val variants: List<FlagVariant> = emptyList(),
+    val metrics: List<ExperimentMetric> = emptyList(),
 ) {
     val status: ExperimentStatus
         get() = when {
@@ -95,6 +105,8 @@ internal fun JsonObject.parseFlag(): FeatureFlag? {
         deleted = bool("deleted") ?: false,
         rolloutPercentage = number("rollout_percentage"),
         filters = get("filters")?.asObjectOrNull(),
+        createdBy = get("created_by")?.asObjectOrNull()?.let { who -> who.string("first_name")?.takeIf(String::isNotBlank) ?: who.string("email") },
+        createdAt = string("created_at"),
     )
 }
 
@@ -108,5 +120,14 @@ internal fun JsonObject.parseExperiment(): Experiment? {
         endDate = string("end_date"),
         featureFlagKey = flagKey,
         conclusion = string("conclusion"),
+        conclusionComment = string("conclusion_comment"),
+        variants = get("parameters")?.asObjectOrNull()?.array("feature_flag_variants")?.mapNotNull { v ->
+            val obj = v.asObjectOrNull() ?: return@mapNotNull null
+            FlagVariant(obj.string("key") ?: return@mapNotNull null, obj.number("rollout_percentage") ?: 0.0)
+        }.orEmpty(),
+        metrics = array("metrics")?.mapNotNull { m ->
+            val obj = m.asObjectOrNull() ?: return@mapNotNull null
+            ExperimentMetric(obj.string("name").orEmpty(), obj.string("metric_type"), obj.string("goal"))
+        }.orEmpty(),
     )
 }

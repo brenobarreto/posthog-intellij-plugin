@@ -21,6 +21,7 @@
                                  instanceClass="io.github.brenobarreto.posthog.settings.PostHogSettingsConfigurable"
                                  bundle="messages.PostHogBundle" key="settings.displayName"/>
         <postStartupActivity implementation="io.github.brenobarreto.posthog.cache.PostHogStartupActivity"/>
+        <editorFactoryListener implementation="io.github.brenobarreto.posthog.editor.PostHogEditorFactoryListener"/>
         <notificationGroup id="PostHog Toolkit" displayType="BALLOON" bundle="messages.PostHogBundle" key="notification.group"/>
     </extensions>
 

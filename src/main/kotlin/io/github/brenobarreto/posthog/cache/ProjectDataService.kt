@@ -38,6 +38,10 @@ class ProjectDataService(private val project: Project, val scope: CoroutineScope
 
     private var lastCredentials: AuthCredentials? = null
 
+    /** The signed-in account's PostHog host, for links; null when signed out. */
+    @Volatile var host: String? = null
+        private set
+
     init {
         ApplicationManager.getApplication().messageBus.connect(this)
             .subscribe(AuthListener.TOPIC, AuthListener { credentials -> scope.launch { onAuthChanged(credentials) } })
@@ -71,6 +75,7 @@ class ProjectDataService(private val project: Project, val scope: CoroutineScope
     private suspend fun onAuthChanged(credentials: AuthCredentials?) {
         val previous = lastCredentials
         lastCredentials = credentials
+        host = credentials?.host
         if (credentials == null) {
             data.clear()
             return
