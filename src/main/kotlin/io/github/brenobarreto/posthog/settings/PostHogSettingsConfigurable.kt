@@ -2,6 +2,8 @@ package io.github.brenobarreto.posthog.settings
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.EDT
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.asContextElement
 import com.intellij.openapi.options.SearchableConfigurable
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.components.JBLabel
@@ -28,6 +30,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.swing.JButton
 import javax.swing.JComponent
+
+// The settings dialog is modal, and a plain EDT dispatch waits until no modal dialog is open.
+private val settingsEdt = Dispatchers.EDT + ModalityState.any().asContextElement()
 
 /**
  * Sign-in controls, which take effect immediately, and the inline hint preferences, which are applied
@@ -162,7 +167,7 @@ class PostHogSettingsConfigurable : SearchableConfigurable {
         auth.scope.launch {
             runReportingErrors {
                 auth.manager.signInWithApiKey(host, key)
-                withContext(Dispatchers.EDT) { apiKeyField.text = "" }
+                withContext(settingsEdt) { apiKeyField.text = "" }
             }
         }
     }
@@ -182,7 +187,7 @@ class PostHogSettingsConfigurable : SearchableConfigurable {
 
     private suspend fun refreshStatus(error: String? = null) {
         val credentials = auth.manager.current()
-        withContext(Dispatchers.EDT) {
+        withContext(settingsEdt) {
             statusLabel.text = describe(credentials)
             errorLabel.text = error.orEmpty()
             signInButton.text = PostHogBundle.message("settings.button.signIn")

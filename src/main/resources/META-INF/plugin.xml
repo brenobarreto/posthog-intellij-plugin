@@ -18,7 +18,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationConfigurable parentId="tools" id="io.github.brenobarreto.posthog.settings"
-                                 instanceClass="io.github.brenobarreto.posthog.settings.PostHogSettingsConfigurable"
+                                 instance="io.github.brenobarreto.posthog.settings.PostHogSettingsConfigurable"
                                  bundle="messages.PostHogBundle" key="settings.displayName"/>
         <postStartupActivity implementation="io.github.brenobarreto.posthog.cache.PostHogStartupActivity"/>
         <editorFactoryListener implementation="io.github.brenobarreto.posthog.editor.PostHogEditorFactoryListener"/>
